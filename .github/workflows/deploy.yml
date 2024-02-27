@@ -1,31 +1,45 @@
 name: CI
-on: push
+
+# runs when you push or merge PR to main branch
+on:
+  push: 
+    branches: 
+      - main
+  pull_request:
+    branches: 
+      - main
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
-  deploy:
-    runs-on: ubuntu-22.04
+  jekyll:
+    runs-on: ubuntu-latest 
     steps:
-      - name: Git checkout
-        uses: actions/checkout@v3
+      # checkout code
+      - uses: actions/checkout@v3
 
-      - name: Update theme
-        # (Optional)If you have the theme added as submodule, you can pull it and use the most updated version
-        run: git submodule update --init --recursive
-
-      - name: Setup hugo
-        uses: peaceiris/actions-hugo@v2
+      # Use ruby/setup-ruby to shorten build times
+      # https://github.com/ruby/setup-ruby
+      - uses: ruby/setup-ruby@v1
         with:
-          hugo-version: "0.110.0"
+          ruby-version: 3.1 # Not needed with a .ruby-version file
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
 
-      - name: Build
-        # remove --minify tag if you do not need it
-        # docs: https://gohugo.io/hugo-pipes/minification/
-        run: hugo --minify
+      # use jekyll-action-ts to build
+      # https://github.com/limjh16/jekyll-action-ts
+      - uses: limjh16/jekyll-action-ts@v2
+        with:
+          enable_cache: true
 
+      # use actions-gh-pages to deploy
+      # https://github.com/peaceiris/actions-gh-pages
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
-          personal_token: ${{ secrets.TOKEN }}
-          publish_dir: ./public
-          #   keep_files: true
-          publish_branch: master
-        #   cname: example.com
+          # GITHUB_TOKEN secret is set up automatically
+          github_token: ${{ secrets.TOKEN }}
+          publish_dir: ./_site
